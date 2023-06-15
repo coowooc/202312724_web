@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GIF Chat</title>
+  <style>
+    #chat-messages {
+      height: 300px;
+      overflow-y: scroll;
+    }
+  </style>
+</head>
+<body>
+  <h1>GIF Chat</h1>
+  <div id="chat-messages"></div>
+  <form id="chat-form" enctype="multipart/form-data">
+    <input type="text" id="message-input" placeholder="Type a message..." required>
+    <input type="file" id="image-input" accept="image/gif" required>
+    <button type="submit">Send</button>
+  </form>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const imageInput = document.getElementById('image-input');
+    const chatMessages = document.getElementById('chat-messages');
+
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const message = messageInput.value;
+      const image = imageInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function (event) {
+        const imageSrc = event.target.result;
+        socket.emit('chat-message', { message, imageSrc });
+      };
+
+      reader.readAsDataURL(image);
+
+      messageInput.value = '';
+      imageInput.value = '';
+    });
+
+    socket.on('chat-message', (data) => {
+      const { message, imageSrc } = data;
+      const messageElement = document.createElement('div');
+      messageElement.innerHTML = `
+        <p><strong>${message}</strong></p>
+        <img src="${imageSrc}" width="200" alt="GIF">
+      `;
+      chatMessages.appendChild(messageElement);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+  </script>
+</body>
+</html>
